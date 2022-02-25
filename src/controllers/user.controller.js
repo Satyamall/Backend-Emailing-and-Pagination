@@ -24,16 +24,16 @@ var transporter = nodemailer.createTransport({
         const user = await User.create(req.body);
 
         const admin = await User.find({roles: {$in: "admin"}},{_id: 0, email: 1});
-        const arr = [];
+        const adminArray = [];
         for(var i=0; i<admin.length; i++)
         {
-            arr[i]=admin[i].email;
+            adminArray[i]=admin[i].email;
         }
 
         const message = {
               from: "noreply@satya.com",
               to: `${user.email}`,
-              cc: arr,
+              cc: adminArray,
               subject: `Welcome to ABC system ${user.first_name} ${user.last_name}`,
               text: `Hi ${user.first_name}, Please confirm your email address`
           }
@@ -42,7 +42,8 @@ var transporter = nodemailer.createTransport({
             if(err){
                 res.send(err);
             }
-            res.status(201).send("Successfully send email")
+            sendMailToAdmins(user,adminArray);
+            res.status(201).send("Successfully send email to user")
         })
         return res.status(200).json({data: user})
     }
@@ -50,6 +51,25 @@ var transporter = nodemailer.createTransport({
         res.status(500).json({msg: "Something went wrong"});
     }
 })
+
+const sendMailToAdmins = (user,adminArray) => {
+
+    adminArray.map((admin) => {
+        const message = {
+          from : "noreply@satya.com",
+          to : admin,
+          subject : `${user.first_name} ${user.last_name} has registered with us`,
+          text : `Please welcom ${user.first_name} ${user.last_name}`
+      }
+
+    transporter.sendMail(message,(err) => {
+          if(err){
+              console.log(err);
+          }
+        console.log(`successfully send email to ${admin}`);
+      })
+  })
+}
 
 router.post("/admin", async (req,res)=>{
     try{
